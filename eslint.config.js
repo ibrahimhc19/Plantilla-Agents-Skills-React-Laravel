@@ -1,3 +1,6 @@
+// npm install eslint-plugin-boundaries --save-dev
+
+
 import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
