@@ -1,121 +1,594 @@
-# AGENTS.md
+# AGENTS.md — Acuafit
 
 ## Project Overview
 
-This is a fullstack application with:
+Acuafit is a swimming academy management platform focused on:
 
-- Frontend: React (Vite) or Next.js (App Router)
+- Student onboarding
+- Enrollment workflows
+- Payment automation
+- Electronic invoicing
+- Attendance tracking
+- Administrative management
+
+Architecture:
+
+- Frontend: React + TypeScript + Vite
 - Backend: Laravel API
-- State Management: Zustand (client state)
-- Server State: TanStack Query
-- Authentication: Laravel Sanctum
-
-The backend (Laravel) is the single source of truth for business logic.
+- Database: PostgreSQL
+- Auth: Laravel Sanctum
+- Data fetching: TanStack Query
 
 ---
 
-## Core Architecture Rules
+# Core Architecture Principles
 
-### 1. Separation of Concerns
+## Backend is the source of truth
 
-- UI components must NOT contain business logic
-- API calls must NOT be inside components
-- Backend handles validation and business rules
+Never duplicate backend business logic in frontend code.
 
----
+Frontend responsibilities:
+- rendering
+- forms
+- UI state
+- optimistic UX only
 
-### 2. Data Ownership
-
-- Server state → TanStack Query
-- Client/global state → Zustand
-- Backend → Laravel (source of truth)
-
----
-
-### 3. API Communication
-
-- All API calls must go through a service layer
-- No direct fetch/axios inside components
-- Use consistent endpoints from Laravel API
+Backend responsibilities:
+- validation
+- permissions
+- business rules
+- state transitions
+- payment verification
 
 ---
 
-### 4. Backend Rules
+# Business Domain Rules
 
-- Controllers must be thin
-- Use Form Requests for validation
-- Use services for business logic
-- Optimize queries (avoid N+1)
+## Students are NOT represented only by roles
 
----
+A student may:
+- enroll multiple times
+- change levels/groups
+- pause studies
+- rejoin later
 
-## Frontend Rules
+Student history MUST be preserved.
 
-### React (Vite)
-
-- Use functional components
-- Keep components small and focused
-- Extract logic into hooks
+Use enrollments for academic lifecycle tracking.
 
 ---
 
-### Next.js (if used)
+## Payments drive enrollment activation
 
-- Default to Server Components
-- Use Client Components only when necessary
-- Prefer server-side data fetching
-- Avoid turning Next.js into a SPA
+Enrollment flow:
 
----
+```text
+Invitation
+→ PreEnrollment
+→ Pending Payment
+→ Payment Approved
+→ Active Enrollment
+```
 
-## Data Fetching Rules
-
-### Default
-
-- Use TanStack Query for server state
-
-### Exceptions (Next.js)
-
-- Use server fetching in Server Components when possible
+Never activate enrollments before payment confirmation.
 
 ---
 
-## When to Use Each Skill
+## Invitation tokens
 
-- react-component-structure  
-  → when creating or refactoring UI components
+Invitation links:
 
-- react-tanstack-query  
-  → when fetching or mutating server data
+* must expire
+* must be single-use
+* must be validated server-side
 
-- tanstack-query-keys-pagination-filters  
-  → when implementing tables, pagination, filters
-
-- state-management-zustand  
-  → when managing shared client state
-
-- laravel-api-architecture  
-  → when working on backend endpoints
-
-- nextjs-app-router-architecture  
-  → when working with Next.js App Router
+Tokens are sent manually through WhatsApp.
 
 ---
 
-## Anti-Patterns (STRICTLY AVOID)
+## Responsible adults / parents
 
-- Fetching data inside components using useEffect (when TanStack Query is available)
-- Putting business logic inside React components
-- Using Zustand for server data
-- Marking all Next.js components as "use client"
-- Duplicating backend logic in frontend
-- Unstructured or inconsistent query keys
+Minors must be linked to a responsible adult.
+
+A responsible adult may:
+
+* manage multiple students
+* pay for multiple students
+* view payments and attendance
+
+Do not duplicate billing data unnecessarily.
 
 ---
 
-## Expected Behavior from Agent
+## Wompi is payment source of truth
 
-- Always choose the correct skill based on the task
-- Prefer clean architecture over quick hacks
-- Refactor code if it violates these rules
-- Suggest better patterns when applicable
+Successful payments must come from:
+
+* validated webhook
+* verified transaction status
+
+Never trust frontend-only payment responses.
+
+---
+
+## Siigo integration
+
+Electronic invoicing happens ONLY after:
+
+* payment approval
+* successful Wompi verification
+
+---
+
+# Core Entities
+
+## User
+
+Authentication entity.
+
+Roles:
+
+* super_admin
+* administrativo
+* profesor
+* contador
+
+Do NOT use role alone to identify students.
+
+---
+
+## Student
+
+Personal student data only.
+
+Contains:
+
+* name
+* document
+* birth date
+* contact data
+
+No enrollment lifecycle logic here.
+
+---
+
+## ResponsibleAdult
+
+Represents:
+
+* parents
+* guardians
+* spouses
+* billing contacts
+
+Supports multiple linked students.
+
+---
+
+## Enrollment
+
+Represents an academic enrollment.
+
+Contains:
+
+* group
+* level
+* status
+* dates
+* billing relationship
+
+Enrollment history must never be deleted.
+
+---
+
+## Invitation
+
+Temporary onboarding invitation.
+
+Contains:
+
+* token
+* expiration
+* selected group
+* selected venue
+
+---
+
+## Payment
+
+Represents money received.
+
+Types:
+
+* matricula
+* mensualidad
+* trimestre
+* paquete
+* clase_individual
+
+---
+
+## Charge / BillingItem
+
+Represents an amount owed.
+
+Separate from payments.
+
+---
+
+## Invoice
+
+Represents fiscal/electronic invoice.
+
+Generated after confirmed payment.
+
+---
+
+## Group
+
+Academic group.
+
+Relations:
+
+* venue
+* level
+* teacher
+
+---
+
+## Venue
+
+Physical location / sede.
+
+---
+
+# Enrollment States
+
+Allowed states:
+
+```text
+pending_payment
+payment_under_review
+approved
+active
+paused
+finished
+rejected
+withdrawn
+```
+
+State transitions must happen in backend services/actions.
+
+---
+
+# Payment States
+
+Allowed states:
+
+```text
+pending
+under_review
+paid
+expired
+partial
+rejected
+```
+
+---
+
+# Frontend Architecture
+
+## State Management
+
+Use:
+
+* TanStack Query for server state
+* local state for UI state
+* Context when appropriate
+
+Avoid global stores unless strictly necessary.
+
+Zustand is allowed ONLY for:
+
+* UI-only state
+* temporary wizard state
+* sidebar/layout state
+
+Do NOT use Zustand for:
+
+* API cache
+* students
+* payments
+* enrollments
+* authentication data
+
+---
+
+## Data Fetching
+
+Use TanStack Query for:
+
+* caching
+* invalidation
+* pagination
+* optimistic updates
+
+Query keys must be structured:
+
+```ts
+['students']
+['students', filters]
+['payments', studentId]
+['groups', venueId]
+```
+
+---
+
+## Forms
+
+Use:
+
+* React Hook Form
+* Zod validation
+
+Requirements:
+
+* reusable form components
+* schema-driven validation
+* minimal duplicated logic
+
+---
+
+## Component Architecture
+
+Prefer:
+
+* small reusable components
+* composition
+* feature-based organization
+
+Avoid:
+
+* giant pages
+* deeply nested prop drilling
+* business logic inside UI components
+
+---
+
+# UI / Design System Rules
+
+## Design Tokens
+
+Never hardcode colors in React components.
+
+Use semantic tokens only.
+
+Examples:
+
+* primary
+* secondary
+* accent
+* destructive
+* muted
+
+---
+
+## Reusable UI Primitives
+
+Reuse patterns for:
+
+* tables
+* headers
+* forms
+* cards
+* modals
+
+Avoid duplicated Tailwind class blocks.
+
+---
+
+## Tables
+
+Admin tables must support:
+
+* pagination
+* loading states
+* empty states
+* filters
+* responsive overflow
+
+---
+
+## UX Rules
+
+Prioritize:
+
+* operational clarity
+* low friction
+* fast workflows
+
+This is an operations-heavy SaaS.
+
+Avoid overdesigned UI.
+
+---
+
+# Laravel Backend Rules
+
+## Controllers
+
+Controllers must stay thin.
+
+Controllers should:
+
+* validate request
+* call action/service
+* return response
+
+Never place business logic inside controllers.
+
+---
+
+## Business Logic
+
+Use:
+
+* Actions
+* Services
+* Domain-oriented classes
+
+Examples:
+
+* CreateInvitationAction
+* ApprovePaymentAction
+* GenerateInvoiceAction
+
+---
+
+## Database
+
+Use:
+
+* eager loading
+* indexes
+* transactions where appropriate
+
+Avoid:
+
+* N+1 queries
+* fat models
+* duplicated state
+
+---
+
+## Validation
+
+Always validate:
+
+* invitation tokens
+* enrollment transitions
+* payment ownership
+* webhook authenticity
+
+---
+
+## Idempotency
+
+Payment confirmation flows MUST be idempotent.
+
+Webhook retries must not duplicate:
+
+* invoices
+* enrollments
+* payments
+
+---
+
+# Authentication
+
+Current auth:
+
+* Sanctum
+
+Future auth:
+
+* Google OAuth via Socialite
+
+Social login should connect to existing users when possible.
+
+---
+
+# Attendance Module
+
+Attendance MVP is intentionally simple.
+
+Teachers should only:
+
+* open group
+* mark attendance
+* submit
+
+Avoid overengineering attendance logic.
+
+---
+
+# Notifications
+
+Initial communication channel:
+
+* manual WhatsApp
+
+Email notifications are secondary.
+
+Do not assume users read emails consistently.
+
+---
+
+# PDF Rules
+
+PDF rendering requirements:
+
+* use table layouts
+* avoid flex/grid
+* use DejaVu Sans
+* avoid unsupported CSS
+* keep layouts print-safe
+
+Never reuse complex web layouts inside PDFs.
+
+---
+
+# Refactor Guidelines
+
+This project is a refactor/evolution of an existing system.
+
+Before rewriting:
+
+* evaluate reuse potential
+* preserve working CRUD modules when reasonable
+
+Safe to reuse partially:
+
+* venues
+* groups
+
+Needs significant refactor:
+
+* students
+* payments
+* invoices
+
+---
+
+# Code Quality Rules
+
+Prioritize:
+
+* maintainability
+* readability
+* business clarity
+
+Avoid:
+
+* premature abstractions
+* unnecessary patterns
+* overengineering
+
+Prefer explicit business code over "clever" code.
+
+---
+
+# Current MVP Priorities
+
+Highest priority modules:
+
+1. Invitations
+2. PreEnrollment
+3. Payments
+4. Wompi
+5. Siigo
+6. Student panel
+7. Admin panel
+8. Attendance
+
+Everything else is secondary.

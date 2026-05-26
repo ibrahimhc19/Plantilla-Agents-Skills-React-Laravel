@@ -6,6 +6,7 @@ description: Enforce consistent code organization patterns including constants, 
 # Frontend Code Organization Skill
 
 ## Goal
+
 Ensure code is maintainable, predictable, and easy to scale by enforcing consistent organization patterns.
 
 ---
@@ -22,6 +23,7 @@ Ensure code is maintainable, predictable, and easy to scale by enforcing consist
   - feature-level constants when scoped
 
 Example:
+
 - /constants/global.ts
 - /features/users/constants.ts
 
@@ -68,9 +70,11 @@ Order inside components:
 - Prefer feature-level files over global when possible
 
 Bad:
+
 - everything in /utils
 
 Good:
+
 - /features/users/utils.ts
 
 ---

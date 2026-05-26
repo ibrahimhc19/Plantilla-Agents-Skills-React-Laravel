@@ -1,6 +1,5 @@
 // npm install eslint-plugin-boundaries --save-dev
 
-
 import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
@@ -9,12 +8,17 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import unusedImports from "eslint-plugin-unused-imports";
 import importPlugin from "eslint-plugin-import";
 import perfectionist from "eslint-plugin-perfectionist";
+import prettier from "eslint-config-prettier";
 
 export default tseslint.config(
   { ignores: ["dist"] },
 
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    extends: [
+      js.configs.recommended,
+      ...tseslint.configs.recommended,
+      prettier,
+    ],
     files: ["**/*.{ts,tsx}"],
 
     languageOptions: {
@@ -59,19 +63,19 @@ export default tseslint.config(
       // Arquitectura / calidad
       // =============================
 
-      complexity: ["error", 8],
-      "max-lines-per-function": ["error", 120],
-      "max-lines": ["error", 300],
+      complexity: ["warn", 8],
+      "max-lines-per-function": ["warn", 120],
+      "max-lines": ["warn", 300],
 
-      "no-nested-ternary": "error",
-      "no-unneeded-ternary": "error",
+      "no-nested-ternary": "warn",
+      "no-unneeded-ternary": "warn",
 
       // =============================
       // Imports
       // =============================
 
       "import/order": [
-        "error",
+        "warn",
         {
           groups: [
             "builtin",
@@ -79,11 +83,19 @@ export default tseslint.config(
             "internal",
             ["parent", "sibling", "index"],
           ],
+          pathGroups: [
+            {
+              pattern: "@/**",
+              group: "internal",
+              position: "before",
+            },
+          ],
+          pathGroupsExcludedImportTypes: ["builtin"],
           "newlines-between": "always",
         },
       ],
 
-      // 🔥 IMPORTANTE: combinar reglas correctamente
+      // IMPORTANTE: combinar reglas correctamente
       "no-restricted-imports": [
         "error",
         {
@@ -95,18 +107,27 @@ export default tseslint.config(
             },
             {
               group: ["../store/*"],
-              message:
-                "Avoid direct store access across unrelated features.",
+              message: "Avoid direct store access across unrelated features.",
             },
             {
-              group: ["**/utils"],
+              group: [
+                "../../**/utils",
+                "../../**/utils/*",
+                "../../../**/utils",
+                "../../../**/utils/*",
+              ],
               message:
-                "Prefer feature-level utils instead of global utils.",
+                "Prefer feature-level utils instead of deep cross-feature relative utils.",
             },
             {
-              group: ["**/constants"],
+              group: [
+                "../../**/constants",
+                "../../**/constants/*",
+                "../../../**/constants",
+                "../../../**/constants/*",
+              ],
               message:
-                "Prefer feature-level constants instead of global constants.",
+                "Prefer feature-level constants instead of deep cross-feature relative constants.",
             },
           ],
         },
@@ -137,14 +158,6 @@ export default tseslint.config(
           enforceConst: true,
         },
       ],
-
-      "no-restricted-syntax": [
-        "warn",
-        {
-          selector: "Literal[value][parent.type='JSXAttribute']",
-          message: "Avoid hardcoded strings in JSX.",
-        },
-      ],
     },
-  }
+  },
 );

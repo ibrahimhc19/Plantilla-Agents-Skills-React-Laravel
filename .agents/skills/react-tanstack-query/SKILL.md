@@ -6,11 +6,13 @@ description: Enforce best practices for server-state management using TanStack Q
 # TanStack Query Skill
 
 ## Goal
+
 Manage server state efficiently using TanStack Query with caching, synchronization, and proper separation of concerns.
 
 ---
 
 ## Core Principles
+
 - TanStack Query manages ALL server state
 - No manual useEffect + useState for fetching
 - API calls still live in service layer (Axios)
@@ -20,6 +22,7 @@ Manage server state efficiently using TanStack Query with caching, synchronizati
 ## Architecture
 
 Structure:
+
 - /services/userService.ts
 - /hooks/queries/useUsers.ts
 - /hooks/mutations/useCreateUser.ts
@@ -27,9 +30,11 @@ Structure:
 ---
 
 ## Service Layer (MANDATORY)
+
 - All API calls must be defined in services
 
 Example:
+
 ```ts
 import api from "@/lib/api";
 
@@ -43,8 +48,8 @@ export const getUsers = async () => {
 
 ## Queries
 
-* Always use `useQuery`
-* Query keys must be structured and predictable
+- Always use `useQuery`
+- Query keys must be structured and predictable
 
 Example:
 
@@ -64,8 +69,8 @@ export const useUsers = () => {
 
 ## Mutations
 
-* Use `useMutation` for create/update/delete
-* Invalidate queries after mutation
+- Use `useMutation` for create/update/delete
+- Invalidate queries after mutation
 
 Example:
 
@@ -89,19 +94,19 @@ export const useCreateUser = () => {
 
 ## Query Keys (IMPORTANT)
 
-* Must be consistent and hierarchical
+- Must be consistent and hierarchical
 
 Examples:
 
-* ["users"]
-* ["users", id]
-* ["users", { page: 1 }]
+- ["users"]
+- ["users", id]
+- ["users", { page: 1 }]
 
 ---
 
 ## UI Usage
 
-* Components consume hooks only
+- Components consume hooks only
 
 ```ts
 const { data, isLoading, error } = useUsers();
@@ -111,15 +116,15 @@ const { data, isLoading, error } = useUsers();
 
 ## Error Handling
 
-* Always expose error from query/mutation
-* Handle UI states (loading, error, empty)
+- Always expose error from query/mutation
+- Handle UI states (loading, error, empty)
 
 ---
 
 ## Caching Rules
 
-* Do NOT refetch unnecessarily
-* Configure staleTime when appropriate
+- Do NOT refetch unnecessarily
+- Configure staleTime when appropriate
 
 Example:
 
@@ -135,16 +140,16 @@ useQuery({
 
 ## Anti-patterns
 
-* useEffect + fetch when TanStack Query is available
-* API calls inside components
-* Not invalidating queries after mutations
-* Random/unstructured query keys
+- useEffect + fetch when TanStack Query is available
+- API calls inside components
+- Not invalidating queries after mutations
+- Random/unstructured query keys
 
 ---
 
 ## Behavior
 
-* Replace manual fetching with TanStack Query
-* Extract logic into query/mutation hooks
-* Suggest cache invalidation strategies
-* Enforce consistent query key structure
+- Replace manual fetching with TanStack Query
+- Extract logic into query/mutation hooks
+- Suggest cache invalidation strategies
+- Enforce consistent query key structure

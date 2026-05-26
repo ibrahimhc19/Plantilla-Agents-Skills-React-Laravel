@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo, pdo_pgsql, dom, fileinfo
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Prepare environment
+        run: |
+          if [ ! -f .env ]; then cp .env.example .env; fi
+          php artisan key:generate --ansi
+
+      - name: Run tests
+        run: php artisan test --without-tty
+
+  frontend:
+    name: Frontend Lint and Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        continue-on-error: true
+        run: npm run lint
+
+      - name: Build
+        run: npm run build

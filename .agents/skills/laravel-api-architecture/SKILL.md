@@ -6,11 +6,13 @@ description: Enforce clean backend architecture in Laravel APIs with proper sepa
 # Laravel API Architecture Skill
 
 ## Goal
+
 Build scalable, maintainable APIs using Laravel with clear separation between controllers, services, and data access.
 
 ---
 
 ## Core Principles
+
 - Controllers are thin
 - Business logic lives in services
 - Validation is handled via Form Requests
@@ -19,6 +21,7 @@ Build scalable, maintainable APIs using Laravel with clear separation between co
 ---
 
 ## Controller Rules
+
 - Controllers must NOT contain business logic
 - Only responsibilities:
   - Receive request
@@ -26,6 +29,7 @@ Build scalable, maintainable APIs using Laravel with clear separation between co
   - Return response
 
 Example:
+
 ```php
 public function store(StoreUserRequest $request)
 {
@@ -39,8 +43,8 @@ public function store(StoreUserRequest $request)
 
 ## Validation (MANDATORY)
 
-* Use Form Request classes
-* NEVER validate inside controllers
+- Use Form Request classes
+- NEVER validate inside controllers
 
 Example:
 
@@ -61,8 +65,8 @@ class StoreUserRequest extends FormRequest
 
 ## Service Layer
 
-* All business logic goes here
-* Controllers must delegate to services
+- All business logic goes here
+- Controllers must delegate to services
 
 Example:
 
@@ -82,9 +86,9 @@ class UserService
 
 ### Rules
 
-* Use Eloquent for standard operations
-* Avoid raw queries unless necessary
-* Prevent N+1 queries using eager loading
+- Use Eloquent for standard operations
+- Avoid raw queries unless necessary
+- Prevent N+1 queries using eager loading
 
 Example:
 
@@ -96,8 +100,8 @@ User::with('roles')->get();
 
 ### Query Optimization
 
-* Select only needed columns
-* Use pagination for large datasets
+- Select only needed columns
+- Use pagination for large datasets
 
 ```php
 User::select('id', 'name')->paginate(15);
@@ -107,37 +111,37 @@ User::select('id', 'name')->paginate(15);
 
 ## API Responses
 
-* Always return JSON
-* Use proper HTTP status codes
+- Always return JSON
+- Use proper HTTP status codes
 
 ---
 
 ## Authentication (Sanctum)
 
-* Use Sanctum for SPA authentication
-* Do not manually handle tokens unless required
+- Use Sanctum for SPA authentication
+- Do not manually handle tokens unless required
 
 ---
 
 ## Error Handling
 
-* Do not expose internal errors
-* Use consistent error responses
+- Do not expose internal errors
+- Use consistent error responses
 
 ---
 
 ## Anti-patterns
 
-* Fat controllers
-* Business logic inside models
-* Repeating validation logic
-* Raw SQL everywhere
-* Returning unfiltered full models
+- Fat controllers
+- Business logic inside models
+- Repeating validation logic
+- Raw SQL everywhere
+- Returning unfiltered full models
 
 ---
 
 ## Behavior
 
-* Extract logic into services if found in controllers
-* Suggest Form Requests when validation is inline
-* Optimize queries when inefficiencies are detected
+- Extract logic into services if found in controllers
+- Suggest Form Requests when validation is inline
+- Optimize queries when inefficiencies are detected

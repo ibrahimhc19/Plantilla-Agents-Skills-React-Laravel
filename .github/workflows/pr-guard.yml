@@ -1,0 +1,82 @@
+name: PR Guard
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  validate-pr-template:
+    name: Validate PR Template
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate mandatory sections and checkboxes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request?.body || "";
+
+            const requiredSections = [
+              "## Business Impact (MANDATORY)",
+              "## Architecture Checklist (MANDATORY)",
+              "## Testing Evidence (MANDATORY)",
+              "## Risk and Rollback"
+            ];
+
+            const requiredCheckedItems = [
+              "This change does not activate enrollments before payment confirmation",
+              "Invitation token rules are preserved (expiration, single-use, server-side validation)",
+              "Wompi remains the payment source of truth (validated webhook + verified transaction status)",
+              "Siigo invoicing remains after approved/verified payment only",
+              "Student lifecycle history is preserved through enrollments (no role-only modeling)",
+              "No API calls inside components",
+              "Business logic is not in frontend",
+              "TanStack Query used for server state",
+              "Zustand used only for client state",
+              "Query keys are structured correctly",
+              "No hardcoded strings or magic numbers",
+              "Constants/types/utils are properly extracted",
+              "Code follows feature-based structure",
+              "Backend tests executed (php artisan test)",
+              "Frontend quality checks executed (npm run lint && npm run build)"
+            ];
+
+            const missingSections = requiredSections.filter((section) => !body.includes(section));
+
+            const uncheckedItems = requiredCheckedItems.filter((item) => {
+              const escapedItem = item.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+              const checked = new RegExp(`- \\[x\\]\\s+${escapedItem}`, "i");
+              return !checked.test(body);
+            });
+
+            const hasEvidenceHeader = body.includes("Evidence:");
+            const hasBackendEvidence = /-\s*Backend:\s*\S+/i.test(body);
+            const hasFrontendEvidence = /-\s*Frontend:\s*\S+/i.test(body);
+            const hasRiskLevel = /Risk level:\s*(Low|Medium|High)/i.test(body);
+            const hasRollbackPlan = /Rollback plan:\s*\S+/i.test(body);
+
+            const errors = [];
+
+            if (missingSections.length) {
+              errors.push(`Missing required sections: ${missingSections.join(", ")}`);
+            }
+
+            if (uncheckedItems.length) {
+              errors.push(`Unchecked mandatory checklist items:\n- ${uncheckedItems.join("\n- ")}`);
+            }
+
+            if (!hasEvidenceHeader || !hasBackendEvidence || !hasFrontendEvidence) {
+              errors.push("Testing evidence is incomplete. Fill Backend and Frontend evidence lines with concrete results.");
+            }
+
+            if (!hasRiskLevel || !hasRollbackPlan) {
+              errors.push("Risk and rollback section is incomplete. Provide risk level and rollback plan.");
+            }
+
+            if (errors.length) {
+              core.setFailed(errors.join("\n\n"));
+            }
